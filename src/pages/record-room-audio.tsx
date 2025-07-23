@@ -1,7 +1,10 @@
 /** biome-ignore-all lint/suspicious/noConsole: temporary */
+
+import { ArrowLeft } from 'lucide-react';
 import { useRef, useState } from 'react';
-import { Navigate, useParams } from 'react-router-dom';
+import { Link, Navigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { useRoom } from '@/http/use-room';
 
 type RoomParams = {
   roomId: string;
@@ -15,6 +18,8 @@ const isRecordingSupported =
 export function RecordRoomAudio() {
   const params = useParams<RoomParams>();
 
+  const { data, isLoading } = useRoom(params.roomId);
+  console.log(data);
   const [isRecording, setIsRecording] = useState(false);
   const recorder = useRef<MediaRecorder | null>(null);
   const intervalRef = useRef<NodeJS.Timeout>(null);
@@ -97,18 +102,46 @@ export function RecordRoomAudio() {
     intervalRef.current = setInterval(() => {
       recorder.current?.stop();
       createRecorder(audio);
-    }, 5000);
+    }, 10_000);
   }
 
   return (
-    <div className="flex h-screen flex-col items-center justify-center gap-3">
-      {isRecording ? (
-        <Button onClick={stopRecording}>Pausar gravação</Button>
-      ) : (
-        <Button onClick={startRecording}>Iniciar gravação</Button>
-      )}
+    <div className="min-h-screen bg-zinc-950">
+      <div className="container mx-auto max-w-4xl px-4 py-8">
+        <div className="mb-8">
+          <div className="mb-4 flex items-center justify-between">
+            <Link to={`/room/${params.roomId}`}>
+              <Button variant="outline">
+                <ArrowLeft className="mr-2 size-4" />
+                Voltar para as questões da sala
+              </Button>
+            </Link>
+          </div>
+          {isLoading ? (
+            <p>Carregando</p>
+          ) : (
+            <>
+              <h1 className="mb-2 font-bold text-3xl text-foreground">
+                Gravação de áudio da sala{' '}
+                <span className="text-gray-400">{data?.[0].name}</span>
+              </h1>
+              <p className="text-muted-foreground">
+                Grave o áudio que será transcrito e utilizado para repostas de
+                perguntas a serem geradas pela A.I.
+              </p>
+              <div className="mt-5 flex flex-col justify-center gap-3">
+                {isRecording ? (
+                  <Button onClick={stopRecording}>Pausar gravação</Button>
+                ) : (
+                  <Button onClick={startRecording}>Iniciar gravação</Button>
+                )}
 
-      {isRecording ? <p>Gravando...</p> : <p>Pausado...</p>}
+                {isRecording ? <p>Gravando...</p> : <p>Pausado...</p>}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
